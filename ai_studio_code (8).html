@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vector Projections Interactive V6</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            user-select: none;
+            margin: 0; padding: 20px;
+        }
+
+        h2 { margin-bottom: 5px; color: #333; }
+        
+        .instructions { 
+            background-color: #fff3cd; color: #856404; 
+            padding: 12px 25px; border-radius: 50px; margin-bottom: 20px; 
+            border: 1px solid #ffeeba; font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            text-align: center;
+            min-width: 500px;
+        }
+
+        .controls { display: flex; gap: 15px; margin-bottom: 15px; }
+        button {
+            padding: 10px 20px; cursor: pointer;
+            background: #e0e0e0; color: #333; border: none; border-radius: 6px;
+            font-weight: 600; transition: 0.2s;
+        }
+        button.active { background: #007bff; color: white; transform: scale(1.05); }
+        button:hover { filter: brightness(0.95); }
+        button.reset { background: #6c757d; color: white; }
+
+        /* Game Area */
+        .game-container {
+            position: relative;
+            width: 850px; height: 550px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: 1px solid #ddd;
+        }
+
+        canvas { display: block; }
+
+        /* Toolbox */
+        .toolbox {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 110px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        /* Draggable Items */
+        .drag-item {
+            padding: 10px 15px;
+            background: white;
+            border: 2px solid #bbb;
+            border-radius: 8px;
+            cursor: grab;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: absolute; 
+            z-index: 20;
+            transition: transform 0.1s, box-shadow 0.2s;
+            display: flex; align-items: center; justify-content: center;
+            white-space: nowrap;
+        }
+        .drag-item:active { cursor: grabbing; transform: scale(1.05); box-shadow: 0 8px 15px rgba(0,0,0,0.2); }
+        .drag-item.correct { 
+            background-color: #d4edda; border-color: #28a745; color: #155724; 
+            pointer-events: none; box-shadow: none;
+        }
+
+        /* --- Mathematical Notation Styles --- */
+        .vec-wrapper { position: relative; display: inline-block; padding-top: 5px; margin: 0 1px; }
+        
+        /* Arrow on top (for BA) */
+        .vec-arrow {
+            position: absolute; top: -4px; left: 0; width: 100%;
+            text-align: center; font-size: 12px; line-height: 1; font-weight: normal;
+        }
+
+        /* Plain Math Italic (for 'a') */
+        .math-italic {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            font-weight: bold;
+        }
+
+        .type-formula { font-family: 'Times New Roman', serif; font-style: italic; font-size: 22px; color: #c0392b; border-color: #e6b0aa; }
+        .type-label { color: #2c3e50; border-color: #aed6f1; background: #ebf5fb; }
+        .type-theta { 
+            font-family: 'Times New Roman', serif; font-size: 24px; color: #d35400; 
+            background: #fadbd8; border-radius: 50%; width: 35px; height: 35px; 
+            border: 2px solid #e67e22;
+        }
+
+        .feedback {
+            position: absolute;
+            top: 20px; left: 50%; transform: translateX(-50%);
+            padding: 10px 30px;
+            background: rgba(40, 167, 69, 0.95); color: white;
+            font-weight: bold; border-radius: 20px;
+            opacity: 0; transition: opacity 0.3s;
+            pointer-events: none; z-index: 30;
+        }
+        .feedback.error { background: rgba(220, 53, 69, 0.95); }
+
+    </style>
+</head>
+<body>
+
+    <h2>Vector Projections & Planes</h2>
+    <div id="instructionText" class="instructions">
+        Step 1: Drag <b>θ</b> to the correct angle.
+    </div>
+
+    <div class="controls">
+        <button id="btnVec" class="active" onclick="setMode('vector')">Mode 1: Vector on Vector</button>
+        <button id="btnPlane" onclick="setMode('plane')">Mode 2: Vector to Plane</button>
+        <button class="reset" onclick="resetDraggables()">↺ Reset</button>
+    </div>
+
+    <div class="game-container" id="container">
+        <canvas id="canvas" width="850" height="440"></canvas>
+        <div id="feedback" class="feedback">Correct!</div>
+        <div class="toolbox" id="toolbox"></div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('container');
+    const feedbackEl = document.getElementById('feedback');
+    const instructionEl = document.getElementById('instructionText');
+    const toolbox = document.getElementById('toolbox');
+
+    // --- State ---
+    let mode = 'vector';
+    let items = []; 
+    let targets = []; 
+    
+    // Mode 1 (Vector)
+    let origin = { x: 100, y: 380 };
+    let vecA = { x: 400, y: 150 }; 
+    
+    // Mode 2 (Plane)
+    let planeCenter = { x: 425, y: 320 };
+    let ptA = { x: 550, y: 100 };  // Point A (Top)
+    let ptB = { x: 250, y: 320 };  // Point B (Base on plane)
+
+    let isDragging = false;
+    let dragItem = null;
+    let dragOffset = { x:0, y:0 };
+    let isMovingVector = false;
+    let vectorDragTarget = null;
+
+    // --- Math Helpers ---
+    const dot = (v1, v2) => v1.x * v2.x + v1.y * v2.y;
+    const sub = (v1, v2) => ({ x: v1.x - v2.x, y: v1.y - v2.y });
+    const dist = (p1, p2) => Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+    
+    function distToSegment(p, v, w) {
+        const l2 = Math.pow(dist(v, w), 2);
+        if (l2 === 0) return dist(p, v);
+        let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        return dist(p, { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) });
+    }
+
+    // --- Initialization ---
+    function init() {
+        container.addEventListener('mousedown', handleMouseDown);
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        setMode('vector');
+        requestAnimationFrame(loop);
+    }
+
+    function setMode(m) {
+        mode = m;
+        document.getElementById('btnVec').className = mode==='vector'?'active':'';
+        document.getElementById('btnPlane').className = mode==='plane'?'active':'';
+        resetDraggables();
+    }
+
+    // --- HTML Generators for Math Notation ---
+    
+    function vecHTML(text) {
+        return `<span class="vec-wrapper">${text}<span class="vec-arrow">→</span></span>`;
+    }
+    function hatHTML(text) {
+        return `<span class="vec-wrapper">${text}<span class="vec-arrow">^</span></span>`;
+    }
+    function simpleItalic(text) {
+        return `<span class="math-italic">${text}</span>`;
+    }
+
+    function createDraggablesForMode() {
+        toolbox.innerHTML = '<div style="position: absolute; top: 5px; left: 20px; font-size: 12px; color: #666; font-weight: bold;">DRAG THESE ITEMS:</div>';
+        items = [];
+        const definitions = [];
+
+        // 1. THETA
+        definitions.push({ id: 'theta', text: 'θ', type: 'theta', matched: false });
+
+        if (mode === 'vector') {
+            // Mode 1: NO TILDE for 'a'
+            definitions.push({ id: 'lbl_proj', text: 'Length of Projection', type: 'label', target: 'proj', matched: false });
+            definitions.push({ id: 'lbl_perp', text: 'Perpendicular Dist', type: 'label', target: 'perp', matched: false });
+            
+            // Formula: | a . b(hat) |
+            definitions.push({ id: 'form_dot', text: `|${simpleItalic('a')} · ${hatHTML('b')}|`, type: 'formula', target: 'proj', matched: false }); 
+            
+            // Formula: | a x b(hat) |
+            definitions.push({ id: 'form_cross', text: `|${simpleItalic('a')} × ${hatHTML('b')}|`, type: 'formula', target: 'perp', matched: false });
+
+        } else {
+            // Mode 2: ARROW for 'BA'
+            definitions.push({ id: 'lbl_proj', text: 'Length of Projection', type: 'label', target: 'proj', matched: false });
+            definitions.push({ id: 'lbl_perp', text: 'Perpendicular Dist', type: 'label', target: 'perp', matched: false });
+            
+            // Formula: | BA (arrow) . n (hat) |
+            definitions.push({ id: 'form_dot', text: `|${vecHTML('BA')} · ${hatHTML('n')}|`, type: 'formula', target: 'perp', matched: false }); 
+            
+            // Formula: | BA (arrow) x n (hat) |
+            definitions.push({ id: 'form_cross', text: `|${vecHTML('BA')} × ${hatHTML('n')}|`, type: 'formula', target: 'proj', matched: false });
+        }
+
+        let startX = 40;
+        const y = 465; 
+        
+        definitions.forEach(def => {
+            const el = document.createElement('div');
+            el.className = `drag-item type-${def.type}`;
+            el.innerHTML = def.text;
+            container.appendChild(el);
+
+            el.style.visibility = 'hidden'; 
+            const w = el.offsetWidth;
+            el.style.visibility = 'visible';
+
+            el.style.left = startX + 'px';
+            el.style.top = y + 'px';
+            
+            items.push({ ...def, el: el, homeX: startX, homeY: y, x: startX, y: y });
+            startX += (w + 15);
+        });
+        
+        updateInstruction();
+    }
+
+    function resetDraggables() {
+        items.forEach(i => i.el.remove());
+        createDraggablesForMode();
+    }
+
+    function updateInstruction() {
+        const theta = items.find(i => i.id === 'theta');
+        if (theta && !theta.matched) {
+            instructionEl.innerHTML = "Step 1: Drag <b>θ</b> to the correct angle.";
+            instructionEl.style.backgroundColor = "#fff3cd";
+        } else {
+            instructionEl.innerHTML = "Step 2: Drag <b>Labels</b> and <b>Formulas</b> to the correct lines (drop anywhere on the line).";
+            instructionEl.style.backgroundColor = "#d1e7dd";
+        }
+    }
+
+    // --- Logic Loop ---
+    function loop() {
+        calculateTargets();
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    function calculateTargets() {
+        targets = [];
+        
+        if (mode === 'vector') {
+            const vA = sub(vecA, origin);
+            const valProj = dot(vA, {x:1, y:0});
+            const projPt = { x: origin.x + valProj, y: origin.y };
+
+            targets.push({ id: 'proj', type: 'line', p1: origin, p2: projPt });
+            targets.push({ id: 'perp', type: 'line', p1: projPt, p2: vecA });
+            targets.push({ id: 'theta_correct', type: 'point', x: origin.x + 30, y: origin.y - 10, r: 40 });
+
+        } else {
+            // Plane Mode
+            const F = { x: ptA.x, y: ptB.y };
+
+            targets.push({ id: 'proj', type: 'line', p1: ptB, p2: F });
+            targets.push({ id: 'perp', type: 'line', p1: ptA, p2: F });
+            
+            // Theta Target: Inside Triangle BAF, near A
+            // A is at ptA. F is at (ptA.x, ptB.y). B is at ptB.
+            // Angle is between vector AF (down) and AB (down-left)
+            targets.push({ id: 'theta_correct', type: 'point', x: ptA.x - 20, y: ptA.y + 40, r: 45 });
+            
+            // Wrong Theta at B
+            targets.push({ id: 'theta_wrong', type: 'point', x: ptB.x + 30, y: ptB.y - 10, r: 40 });
+        }
+    }
+
+    // --- Drawing ---
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (mode === 'vector') drawVectorMode();
+        else drawPlaneMode();
+    }
+
+    function drawArrow(from, to, color, dashed=false, width=3) {
+        ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = width;
+        if(dashed) ctx.setLineDash([6,4]);
+        ctx.moveTo(from.x, from.y); ctx.lineTo(to.x, to.y); ctx.stroke(); ctx.setLineDash([]);
+
+        const angle = Math.atan2(to.y - from.y, to.x - from.x);
+        const head = 12;
+        ctx.beginPath(); ctx.fillStyle = color;
+        ctx.moveTo(to.x, to.y);
+        ctx.lineTo(to.x - head * Math.cos(angle - Math.PI/6), to.y - head * Math.sin(angle - Math.PI/6));
+        ctx.lineTo(to.x - head * Math.cos(angle + Math.PI/6), to.y - head * Math.sin(angle + Math.PI/6));
+        ctx.fill();
+    }
+
+    function drawVectorMode() {
+        const vA = sub(vecA, origin);
+        const valProj = dot(vA, {x:1, y:0});
+        const projPt = { x: origin.x + valProj, y: origin.y };
+
+        // Base Line
+        ctx.beginPath(); ctx.strokeStyle="#333"; ctx.lineWidth=2;
+        ctx.moveTo(origin.x - 30, origin.y); ctx.lineTo(origin.x + 650, origin.y); ctx.stroke();
+        ctx.font="italic 14px serif"; ctx.fillStyle="#666"; ctx.fillText("line l (vector b)", origin.x+660, origin.y+5);
+
+        // Projection (Orange)
+        ctx.beginPath(); ctx.strokeStyle="rgba(230, 126, 34, 0.6)"; ctx.lineWidth=8;
+        ctx.moveTo(origin.x, origin.y); ctx.lineTo(projPt.x, projPt.y); ctx.stroke();
+
+        // Perpendicular (Green Dashed)
+        drawArrow(vecA, projPt, "#27ae60", true);
+        // Vector A (Blue)
+        drawArrow(origin, vecA, "#2980b9");
+        // Angle Arc
+        ctx.beginPath(); ctx.arc(origin.x, origin.y, 40, -0.5, 0); ctx.strokeStyle="#ccc"; ctx.stroke();
+
+        // Labels
+        drawLabel("O", origin.x - 20, origin.y + 10, "#c0392b");
+        drawLabel("A", vecA.x + 10, vecA.y, "#2980b9"); 
+        drawLabel("B", origin.x + 300, origin.y + 30, "#333"); 
+        drawPoint(vecA, "#2980b9");
+    }
+
+    function drawPlaneMode() {
+        const F = { x: ptA.x, y: ptB.y };
+
+        // Plane Visual
+        ctx.beginPath(); 
+        ctx.fillStyle = "rgba(220, 50, 50, 0.05)"; ctx.strokeStyle = "#c0392b";
+        ctx.ellipse(planeCenter.x, planeCenter.y, 320, 70, 0, 0, 2 * Math.PI);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle="#c0392b"; ctx.fillText("Plane Π", planeCenter.x + 250, planeCenter.y);
+
+        // Normal Vector Visual (Side reference)
+        const nRef = {x: planeCenter.x - 250, y: planeCenter.y};
+        drawArrow(nRef, {x: nRef.x, y: nRef.y - 60}, "#999");
+        drawLabel("n", nRef.x - 20, nRef.y - 30, "#999");
+
+        // Angle Theta at A:
+        // Between Vector BA (blue) and Vertical Perpendicular Line (green)
+        // Vertical Line Angle = Math.PI / 2 (Down)
+        // Vector AB Angle = atan2(...)
+        const angleVert = Math.PI / 2;
+        const angleAB = Math.atan2(ptB.y - ptA.y, ptB.x - ptA.x);
+        
+        ctx.beginPath();
+        ctx.strokeStyle = "#ccc";
+        ctx.lineWidth = 2;
+        // Draw arc from Vertical (90deg) to Vector (approx 135deg) -> Clockwise
+        ctx.arc(ptA.x, ptA.y, 40, angleVert, angleAB, false); 
+        ctx.stroke();
+
+        // Projection on Plane (Orange Dashed)
+        drawArrow(ptB, F, "#e67e22", true);
+        
+        // Perpendicular Distance (Green Dashed)
+        drawArrow(ptA, F, "#27ae60", true);
+
+        // Vector BA (Blue)
+        drawArrow(ptB, ptA, "#2980b9");
+
+        // Labels
+        drawLabel("B", ptB.x - 25, ptB.y + 10, "black");
+        drawLabel("A", ptA.x + 10, ptA.y - 5, "#2980b9");
+        drawLabel("F", F.x + 10, F.y + 20, "#555");
+
+        ctx.beginPath(); ctx.strokeStyle="#333"; ctx.lineWidth=1;
+        ctx.rect(F.x - 10, F.y - 10, 10, 10); ctx.stroke();
+
+        drawPoint(ptA, "#2980b9");
+        drawPoint(ptB, "black");
+    }
+
+    function drawLabel(text, x, y, color) {
+        ctx.font = "bold 20px sans-serif";
+        ctx.fillStyle = color;
+        ctx.fillText(text, x, y);
+    }
+
+    function drawPoint(p, color) {
+        ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, Math.PI*2);
+        ctx.fillStyle = color; ctx.fill();
+        ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.stroke();
+    }
+
+    // --- Interaction ---
+    function handleMouseDown(e) {
+        const rect = container.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        // Move Geometry
+        if (mode === 'vector' && dist({x:mx, y:my}, vecA) < 20) { isMovingVector = true; vectorDragTarget = 'vecA'; return; }
+        if (mode === 'plane') {
+            if (dist({x:mx, y:my}, ptA) < 20) { isMovingVector = true; vectorDragTarget = 'ptA'; return; }
+            if (dist({x:mx, y:my}, ptB) < 20) { isMovingVector = true; vectorDragTarget = 'ptB'; return; }
+        }
+
+        // Move Items
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const item = items.find(i => i.el === el || i.el.contains(el));
+        
+        if (item && !item.matched) {
+            isDragging = true;
+            dragItem = item;
+            const box = item.el.getBoundingClientRect();
+            dragOffset.x = e.clientX - box.left - box.width/2; 
+            dragOffset.y = e.clientY - box.top - box.height/2;
+            item.el.style.zIndex = 100;
+        }
+    }
+
+    function handleMouseMove(e) {
+        const rect = container.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        if (isMovingVector) {
+            let tx = Math.max(50, Math.min(800, mx));
+            let ty = Math.max(50, Math.min(400, my));
+            if (vectorDragTarget === 'vecA') vecA = {x:tx, y:ty};
+            if (vectorDragTarget === 'ptA') ptA = {x:tx, y:ty};
+            if (vectorDragTarget === 'ptB') ptB = {x:tx, y:ty};
+            if (items.some(i => i.matched)) { resetDraggables(); showToast("Rematch required!", "error"); }
+        } else if (isDragging && dragItem) {
+            const x = e.clientX - rect.left - dragItem.el.offsetWidth/2;
+            const y = e.clientY - rect.top - dragItem.el.offsetHeight/2;
+            dragItem.x = x; dragItem.y = y;
+            dragItem.el.style.left = x + 'px';
+            dragItem.el.style.top = y + 'px';
+        }
+    }
+
+    function handleMouseUp() {
+        if (isDragging && dragItem) {
+            checkDrop(dragItem);
+            dragItem.el.style.zIndex = 20;
+            dragItem = null;
+            isDragging = false;
+        }
+        isMovingVector = false;
+    }
+
+    function checkDrop(item) {
+        const cx = item.x + item.el.offsetWidth / 2;
+        const cy = item.y + item.el.offsetHeight / 2;
+
+        if (item.type === 'theta') {
+            const correct = targets.find(t => t.id === 'theta_correct');
+            const wrong = targets.find(t => t.id === 'theta_wrong');
+            if (correct && dist({x:cx, y:cy}, correct) < correct.r) {
+                snapItem(item, correct.x - 15, correct.y - 15);
+                showToast("Correct!");
+                updateInstruction();
+            } else if (wrong && dist({x:cx, y:cy}, wrong) < wrong.r) {
+                returnItem(item);
+                showToast("Wrong location!", "error");
+            } else {
+                returnItem(item);
+            }
+            return;
+        }
+
+        const thetaItem = items.find(i => i.id === 'theta');
+        if (!thetaItem.matched) { returnItem(item); showToast("Place θ first!", "error"); return; }
+
+        let matchedTarget = null;
+        targets.forEach(t => {
+            if (t.type !== 'line') return;
+            const d = distToSegment({x:cx, y:cy}, t.p1, t.p2);
+            if (d < 60) matchedTarget = t; 
+        });
+
+        if (matchedTarget && item.target === matchedTarget.id) {
+            const centerX = (matchedTarget.p1.x + matchedTarget.p2.x) / 2;
+            const centerY = (matchedTarget.p1.y + matchedTarget.p2.y) / 2;
+            snapItem(item, centerX - item.el.offsetWidth/2, centerY - item.el.offsetHeight/2);
+            showToast("Correct!");
+        } else {
+            returnItem(item);
+            if (matchedTarget) showToast("Incorrect item for this line.", "error");
+        }
+    }
+
+    function snapItem(item, x, y) {
+        item.x = x; item.y = y;
+        item.el.style.left = x + 'px'; item.el.style.top = y + 'px';
+        item.matched = true; item.el.classList.add('correct');
+    }
+
+    function returnItem(item) {
+        item.x = item.homeX; item.y = item.homeY;
+        item.el.style.left = item.x + 'px'; item.el.style.top = item.y + 'px';
+        item.el.classList.remove('correct');
+    }
+
+    function showToast(msg, type="success") {
+        feedbackEl.innerText = msg;
+        feedbackEl.className = "feedback " + type;
+        feedbackEl.style.opacity = 1;
+        setTimeout(() => feedbackEl.style.opacity = 0, 2000);
+    }
+
+    init();
+
+</script>
+</body>
+</html>
