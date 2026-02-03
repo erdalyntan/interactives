@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vector Line Equation Challenge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --secondary: #ec4899;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg-dark: #0f172a;
+            --bg-light: #1e293b;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            animation: rotate 30s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            position: relative;
+            z-index: 1;
+            animation: slideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.2); }
+        }
+
+        .score-display {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .timer {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .timer-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 500;
+            color: var(--accent);
+            min-width: 80px;
+        }
+
+        .timer-value.warning {
+            color: var(--danger);
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .question-box {
+            background: var(--bg-light);
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            border-left: 5px solid var(--accent);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .question-title {
+            color: var(--accent);
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .equation {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.8rem;
+            text-align: center;
+            padding: 20px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .fraction {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+        }
+
+        .fraction .numerator {
+            padding-bottom: 5px;
+            border-bottom: 2px solid #fff;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .fraction .denominator {
+            padding-top: 5px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .equals {
+            font-size: 2rem;
+            padding: 0 10px;
+        }
+
+        .comma {
+            font-size: 2rem;
+            padding: 0 5px;
+        }
+
+        .constant {
+            font-size: 1.8rem;
+            padding: 0 10px;
+            white-space: nowrap;
+        }
+
+        .answer-section {
+            background: var(--bg-light);
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+
+        .answer-title {
+            color: var(--secondary);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .vector-form {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .column-vector {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .bracket {
+            font-size: 3rem;
+            color: var(--primary);
+            font-weight: 300;
+        }
+
+        .vector-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        input[type="number"] {
+            width: 70px;
+            padding: 10px;
+            font-size: 1.2rem;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(99, 102, 241, 0.2);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            color: var(--text);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(245, 158, 11, 0.2);
+            transform: scale(1.05);
+        }
+
+        input[type="number"].correct {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        input[type="number"].incorrect {
+            border-color: var(--danger);
+            background: rgba(239, 68, 68, 0.2);
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-check {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+
+        .btn-check:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-retry {
+            background: linear-gradient(135deg, var(--accent), #d97706);
+            color: white;
+        }
+
+        .btn-retry:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .feedback {
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .feedback.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border: 2px solid var(--success);
+        }
+
+        .feedback.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            border: 2px solid var(--danger);
+        }
+
+        .hint {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            border-left: 3px solid var(--primary);
+        }
+
+        .points-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: var(--bg-dark);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 700;
+            margin-left: 10px;
+            font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .equation {
+                font-size: 1.2rem;
+            }
+
+            .fraction .numerator,
+            .fraction .denominator {
+                min-width: 60px;
+                font-size: 1rem;
+            }
+
+            .equals, .comma {
+                font-size: 1.5rem;
+            }
+
+            .constant {
+                font-size: 1.2rem;
+            }
+
+            .vector-form {
+                font-size: 1rem;
+                gap: 10px;
+            }
+
+            .bracket {
+                font-size: 2rem;
+            }
+
+            input[type="number"] {
+                width: 60px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Vector Line Quest</h1>
+            <div class="score-display">🏆 <span id="score">0</span></div>
+        </div>
+
+        <div class="timer">
+            <span>⏱️ Time:</span>
+            <span class="timer-value" id="timer">00:00</span>
+        </div>
+
+        <div class="question-box">
+            <div class="question-title">📐 Convert Cartesian Equation to Vector Equation</div>
+            <div class="equation" id="equation"></div>
+        </div>
+
+        <div class="answer-section">
+            <div class="answer-title">✍️ Your Answer</div>
+            <div class="vector-form">
+                <span style="color: var(--accent); font-size: 1.5rem;">r</span> 
+                <span style="font-size: 1.5rem;">=</span>
+                
+                <div class="column-vector">
+                    <span class="bracket">[</span>
+                    <div class="vector-inputs">
+                        <input type="number" id="a" class="input-field">
+                        <input type="number" id="b" class="input-field">
+                        <input type="number" id="c" class="input-field">
+                    </div>
+                    <span class="bracket">]</span>
+                </div>
+                
+                <span style="font-size: 1.5rem;">+</span>
+                <span style="color: var(--secondary); font-size: 1.5rem;">λ</span>
+                
+                <div class="column-vector">
+                    <span class="bracket">[</span>
+                    <div class="vector-inputs">
+                        <input type="number" id="d" class="input-field">
+                        <input type="number" id="e" class="input-field">
+                        <input type="number" id="f" class="input-field">
+                    </div>
+                    <span class="bracket">]</span>
+                </div>
+            </div>
+
+            <div id="feedback"></div>
+
+            <div class="buttons">
+                <button class="btn-check" id="checkBtn" onclick="checkAnswer()">Check Answer</button>
+                <button class="btn-retry" id="retryBtn" onclick="retryQuestion()" style="display: none;">Try Again</button>
+                <button class="btn-next" id="nextBtn" onclick="nextQuestion()" style="display: none;">Next Question</button>
+            </div>
+
+            <div class="hint">
+                💡 <strong>Tip:</strong> The vector form uses column vectors:<br>
+                r = [x₀, y₀, z₀]ᵀ + λ[l, m, n]ᵀ<br>
+                where the line passes through point (x₀, y₀, z₀) with direction vector (l, m, n)<br>
+                <strong>Note:</strong> If a coordinate is constant (e.g., y = 0), its direction component is 0<br>
+                <strong>Challenge:</strong> Questions vary from standard forms to multiple constant coordinates!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        let currentQuestion = {};
+        let startTime;
+        let timerInterval;
+        let attempts = 0;
+
+        function generateQuestion() {
+            // Generate random values for the line equation
+            const x0 = Math.floor(Math.random() * 10) - 5;
+            const y0 = Math.floor(Math.random() * 10) - 5;
+            const z0 = Math.floor(Math.random() * 10) - 5;
+            
+            let l, m, n;
+            const questionType = Math.random();
+            
+            if (questionType < 0.50) {
+                // Type 1: All fractions (standard form) - 50%
+                l = Math.floor(Math.random() * 8) + 1;
+                m = Math.floor(Math.random() * 8) + 1;
+                n = Math.floor(Math.random() * 8) + 1;
+            } else if (questionType < 0.90) {
+                // Type 2: One constant coordinate - 40%
+                const constantAxis = Math.floor(Math.random() * 3);
+                l = constantAxis === 0 ? 0 : Math.floor(Math.random() * 8) + 1;
+                m = constantAxis === 1 ? 0 : Math.floor(Math.random() * 8) + 1;
+                n = constantAxis === 2 ? 0 : Math.floor(Math.random() * 8) + 1;
+            } else {
+                // Type 3: All constants (point only) - 10%
+                l = 0;
+                m = 0;
+                n = 0;
+            }
+
+            currentQuestion = {
+                x0, y0, z0, l, m, n
+            };
+
+            // Display the Cartesian equation: (x - x0)/l = (y - y0)/m = (z - z0)/n
+            // Format to show natural form like (x + 3) when x0 = -3
+            // If the value is 0, just show the variable without any constant
+            const formatTerm = (variable, val) => {
+                if (val === 0) return variable;
+                return val >= 0 ? `${variable} - ${val}` : `${variable} + ${Math.abs(val)}`;
+            };
+            
+            // Separate fractions and constants
+            let fractions = [];
+            let constants = [];
+            
+            if (l === 0) {
+                // x is constant
+                constants.push(`x = ${x0}`);
+            } else {
+                fractions.push(`
+                    <div class="fraction">
+                        <div class="numerator">(${formatTerm('x', x0)})</div>
+                        <div class="denominator">${l}</div>
+                    </div>
+                `);
+            }
+            
+            if (m === 0) {
+                // y is constant
+                constants.push(`y = ${y0}`);
+            } else {
+                fractions.push(`
+                    <div class="fraction">
+                        <div class="numerator">(${formatTerm('y', y0)})</div>
+                        <div class="denominator">${m}</div>
+                    </div>
+                `);
+            }
+            
+            if (n === 0) {
+                // z is constant
+                constants.push(`z = ${z0}`);
+            } else {
+                fractions.push(`
+                    <div class="fraction">
+                        <div class="numerator">(${formatTerm('z', z0)})</div>
+                        <div class="denominator">${n}</div>
+                    </div>
+                `);
+            }
+            
+            // Build final HTML
+            let fractionHTML = '';
+            
+            // Add fractions with = signs between them
+            if (fractions.length > 0) {
+                fractionHTML = fractions.join('<span class="equals">=</span>');
+            }
+            
+            // Add constants with commas
+            if (constants.length > 0) {
+                if (fractionHTML) {
+                    fractionHTML += '<span class="comma">, </span>';
+                }
+                fractionHTML += constants.map(c => `<span class="constant">${c}</span>`).join('<span class="comma">, </span>');
+            }
+            
+            document.getElementById('equation').innerHTML = fractionHTML;
+
+            // Clear inputs and feedback
+            ['a', 'b', 'c', 'd', 'e', 'f'].forEach(id => {
+                const input = document.getElementById(id);
+                input.value = '';
+                input.className = 'input-field';
+            });
+            document.getElementById('feedback').innerHTML = '';
+            document.getElementById('checkBtn').style.display = 'inline-block';
+            document.getElementById('retryBtn').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+
+            // Reset timer
+            attempts = 0;
+            startTime = Date.now();
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                const timerElement = document.getElementById('timer');
+                timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                
+                if (elapsed >= 60) {
+                    timerElement.classList.add('warning');
+                } else {
+                    timerElement.classList.remove('warning');
+                }
+            }, 1000);
+        }
+
+        function checkAnswer() {
+            attempts++;
+            const a = parseInt(document.getElementById('a').value);
+            const b = parseInt(document.getElementById('b').value);
+            const c = parseInt(document.getElementById('c').value);
+            const d = parseInt(document.getElementById('d').value);
+            const e = parseInt(document.getElementById('e').value);
+            const f = parseInt(document.getElementById('f').value);
+
+            if (isNaN(a) || isNaN(b) || isNaN(c) || isNaN(d) || isNaN(e) || isNaN(f)) {
+                showFeedback('Please fill in all fields!', 'error');
+                return;
+            }
+
+            // Check if answer matches the point and direction vector
+            const correct = 
+                a === currentQuestion.x0 &&
+                b === currentQuestion.y0 &&
+                c === currentQuestion.z0 &&
+                d === currentQuestion.l &&
+                e === currentQuestion.m &&
+                f === currentQuestion.n;
+
+            if (correct) {
+                clearInterval(timerInterval);
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const points = elapsed < 60 ? 2 : 1;
+                score += points;
+                document.getElementById('score').textContent = score;
+
+                ['a', 'b', 'c', 'd', 'e', 'f'].forEach(id => {
+                    document.getElementById(id).classList.add('correct');
+                });
+
+                const timeBonus = elapsed < 60 ? ' 🔥 Speed bonus!' : '';
+                showFeedback(`🎉 Correct! +${points} point${points > 1 ? 's' : ''}${timeBonus}`, 'success');
+                document.getElementById('checkBtn').style.display = 'none';
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            } else {
+                // Highlight incorrect fields
+                ['a', 'b', 'c', 'd', 'e', 'f'].forEach(id => {
+                    const input = document.getElementById(id);
+                    const value = parseInt(input.value);
+                    const correctValue = currentQuestion[id];
+                    
+                    if (value === correctValue) {
+                        input.classList.add('correct');
+                        input.classList.remove('incorrect');
+                    } else {
+                        input.classList.add('incorrect');
+                        input.classList.remove('correct');
+                    }
+                });
+
+                showFeedback('❌ Not quite right. Check the highlighted fields!', 'error');
+                document.getElementById('checkBtn').style.display = 'none';
+                document.getElementById('retryBtn').style.display = 'inline-block';
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            }
+        }
+
+        function retryQuestion() {
+            ['a', 'b', 'c', 'd', 'e', 'f'].forEach(id => {
+                document.getElementById(id).classList.remove('correct', 'incorrect');
+            });
+            document.getElementById('feedback').innerHTML = '';
+            document.getElementById('checkBtn').style.display = 'inline-block';
+            document.getElementById('retryBtn').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+        }
+
+        function nextQuestion() {
+            generateQuestion();
+        }
+
+        function showFeedback(message, type) {
+            const feedback = document.getElementById('feedback');
+            feedback.className = `feedback ${type}`;
+            feedback.innerHTML = message;
+        }
+
+        // Initialize first question
+        generateQuestion();
+    </script>
+</body>
+</html>
