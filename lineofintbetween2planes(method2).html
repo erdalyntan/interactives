@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intersection of Two Planes</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- MathJax for LaTeX -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)']],
+                displayMath: [['\\[', '\\]']],
+                processEscapes: true
+            },
+            options: {
+                enableMenu: false
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; }
+
+        /* H2 Vector Notation Requirements (STRICT) */
+        .vector-var {
+            position: relative;
+            display: inline-block;
+            font-weight: bold;
+            font-style: italic;
+            padding-top: 0.5em;
+        }
+        /* Arrowhead precisely on top */
+        .vector-var::before {
+            content: "→";
+            position: absolute;
+            top: -0.2em;
+            left: 50%;
+            transform: translateX(-50%);
+            font-style: normal;
+            font-weight: 900;
+            color: black;
+            font-size: 0.9em;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+
+        .status-dot {
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .drop-zone {
+            min-height: 50px;
+            border: 2px dashed #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .drop-zone.active { border-color: #ec4899; background: rgba(236, 72, 153, 0.05); }
+
+        .draggable-btn {
+            cursor: grab;
+            transition: transform 0.1s ease;
+        }
+        .draggable-btn:active { cursor: grabbing; transform: scale(0.95); }
+
+        /* H2-style tall rounded parentheses (pmatrix) logic via CSS for inputs */
+        .vector-bracket-left { border-left: 2px solid black; border-top: 2px solid black; border-bottom: 2px solid black; border-radius: 12px 0 0 12px; }
+        .vector-bracket-right { border-right: 2px solid black; border-top: 2px solid black; border-bottom: 2px solid black; border-radius: 0 12px 12px 0; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-pink-50 to-amber-50 min-h-screen pb-12">
+
+    <!-- Header Section -->
+    <header class="bg-gradient-to-r from-indigo-600 via-pink-500 to-amber-500 p-6 text-white shadow-lg mb-8">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold tracking-tight">Finding the Line of Intersection between two non-parallel Planes</h1>
+            </div>
+            <div id="progress-container" class="hidden md:block w-48 bg-white/20 rounded-full h-3">
+                <div id="progress-bar" class="bg-white h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4">
+        
+        <!-- Page 0: Summary -->
+        <section id="page-0" class="space-y-6">
+            <div class="glass-card rounded-3xl p-8 border-l-8 border-indigo-500">
+                <h2 class="text-2xl font-bold text-indigo-800 mb-4">Problem Definition</h2>
+                <p class="text-gray-700 leading-relaxed">
+                    Given two non-parallel planes \( \mathit{p}_1 \) and \( \mathit{p}_2 \), they intersect along a unique line \( \mathit{l} \). 
+                    To find the equation of this line, we need a point that lies on both planes and a direction vector that is perpendicular to both normal vectors.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="glass-card p-6 rounded-2xl border-l-4 border-pink-400">
+                    <span class="text-xs font-bold uppercase tracking-widest text-pink-500">Step 1</span>
+                    <h3 class="font-bold text-gray-800">Identify Normals</h3>
+                    <p class="text-sm text-gray-600 mt-2">Extract normal vectors \( \mathbf{\mathit{n}}_1 \) and \( \mathbf{\mathit{n}}_2 \) from the equations.</p>
+                </div>
+                <div class="glass-card p-6 rounded-2xl border-l-4 border-amber-400">
+                    <span class="text-xs font-bold uppercase tracking-widest text-amber-500">Step 2</span>
+                    <h3 class="font-bold text-gray-800">Cross Product</h3>
+                    <p class="text-sm text-gray-600 mt-2">The direction vector of the line is \( \mathbf{\mathit{d}} = \mathbf{\mathit{n}}_1 \times \mathbf{\mathit{n}}_2 \).</p>
+                </div>
+                <div class="glass-card p-6 rounded-2xl border-l-4 border-indigo-400">
+                    <span class="text-xs font-bold uppercase tracking-widest text-indigo-500">Step 3</span>
+                    <h3 class="font-bold text-gray-800">Solve for a Point</h3>
+                    <p class="text-sm text-gray-600 mt-2">Set one variable (e.g., \( z=0 \)) and solve simultaneously to find point \( \mathbf{\mathit{a}} \).</p>
+                </div>
+                <div class="glass-card p-6 rounded-2xl border-l-4 border-green-400">
+                    <span class="text-xs font-bold uppercase tracking-widest text-green-500">Step 4</span>
+                    <h3 class="font-bold text-gray-800">Assemble Equation</h3>
+                    <p class="text-sm text-gray-600 mt-2">Final equation: \( \mathit{l}: \mathbf{\mathit{r}} = \mathbf{\mathit{a}} + \lambda \mathbf{\mathit{d}}, \lambda \in \mathbb{R} \).</p>
+                </div>
+            </div>
+
+            <button onclick="startApp()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-xl transition-all transform hover:-translate-y-1">
+                Generate Interactive Problem
+            </button>
+        </section>
+
+        <!-- Page 1+: Interactive Problem -->
+        <section id="interactive-container" class="hidden space-y-8 pb-20">
+            <div class="glass-card p-8 rounded-3xl text-center">
+                <h2 class="text-xl font-bold text-gray-800 mb-4" id="problem-text">Loading...</h2>
+            </div>
+
+            <!-- Interaction Steps -->
+            <div id="step-1-ui" class="step-section">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold">INSTRUCTION: DRAG & DROP</span>
+                    <h3 class="text-lg font-bold text-gray-800">Identify Normal Vectors</h3>
+                </div>
+                
+                <div class="flex flex-wrap gap-4 justify-center mb-6" id="draggable-tray"></div>
+
+                <div class="grid grid-cols-2 gap-8">
+                    <div class="flex flex-col items-center">
+                        <span class="text-sm font-semibold mb-2">\( \mathbf{\mathit{n}}_1 \)</span>
+                        <div id="drop-n1" data-target="n1" class="drop-zone w-32 rounded-xl flex items-center justify-center p-2"></div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <span class="text-sm font-semibold mb-2">\( \mathbf{\mathit{n}}_2 \)</span>
+                        <div id="drop-n2" data-target="n2" class="drop-zone w-32 rounded-xl flex items-center justify-center p-2"></div>
+                    </div>
+                </div>
+                <div id="feedback-1" class="mt-4 text-center font-bold text-sm"></div>
+            </div>
+
+            <div id="step-2-ui" class="step-section opacity-30 pointer-events-none">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-xs font-bold">INSTRUCTION: INPUT VALUES</span>
+                    <h3 class="text-lg font-bold text-gray-800">Direction Vector \( \mathbf{\mathit{d}} = \mathbf{\mathit{n}}_1 \times \mathbf{\mathit{n}}_2 \)</h3>
+                </div>
+                <div class="flex items-center justify-center gap-4">
+                    <div class="vector-bracket-left w-2 h-32"></div>
+                    <div class="flex flex-col gap-2">
+                        <input type="text" id="d-x" class="w-20 p-2 border rounded text-center">
+                        <input type="text" id="d-y" class="w-20 p-2 border rounded text-center">
+                        <input type="text" id="d-z" class="w-20 p-2 border rounded text-center">
+                    </div>
+                    <div class="vector-bracket-right w-2 h-32"></div>
+                    <button onclick="validateStep2()" class="bg-pink-500 text-white px-6 py-2 rounded-xl hover:bg-pink-600 font-bold">Verify</button>
+                </div>
+                <div id="feedback-2" class="mt-4 text-center font-bold text-sm"></div>
+            </div>
+
+            <div id="step-3-ui" class="step-section opacity-30 pointer-events-none">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">INSTRUCTION: FIND POINT</span>
+                    <h3 class="text-lg font-bold text-gray-800">Point \( \mathbf{\mathit{a}} \) (Let \( z=0 \))</h3>
+                </div>
+                <div class="flex items-center justify-center gap-4">
+                    <div class="vector-bracket-left w-2 h-32"></div>
+                    <div class="flex flex-col gap-2">
+                        <input type="text" id="a-x" class="w-20 p-2 border rounded text-center">
+                        <input type="text" id="a-y" class="w-20 p-2 border rounded text-center">
+                        <input type="text" value="0" disabled class="w-20 p-2 border bg-gray-100 rounded text-center">
+                    </div>
+                    <div class="vector-bracket-right w-2 h-32"></div>
+                    <button onclick="validateStep3()" class="bg-amber-500 text-white px-6 py-2 rounded-xl hover:bg-amber-600 font-bold">Verify</button>
+                </div>
+                <div id="feedback-3" class="mt-4 text-center font-bold text-sm"></div>
+            </div>
+
+            <div id="step-4-ui" class="step-section opacity-30 pointer-events-none text-center">
+                <h3 class="text-2xl font-bold text-indigo-900 mb-6">Final Line Equation</h3>
+                <div class="flex items-center justify-center gap-2 text-xl font-bold overflow-x-auto p-4">
+                    \( \mathit{l}: \mathbf{\mathit{r}} = \)
+                    <div id="final-a-display" class="inline-block"></div>
+                    \( + \lambda \)
+                    <div id="final-d-display" class="inline-block"></div>
+                </div>
+                <button onclick="window.location.reload()" class="mt-8 bg-indigo-600 text-white px-10 py-3 rounded-full hover:bg-indigo-700 font-bold">New Problem</button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let problem = {};
+        
+        // Robust Math Parser (Requirement)
+        function parseMath(str) {
+            try {
+                let sanitized = str.replace(/\s/g, '').replace(/[^\d\+\-\*\/\.\(\)]/g, '');
+                if (!sanitized) return NaN;
+                return new Function(`return ${sanitized}`)();
+            } catch (e) { return NaN; }
+        }
+
+        function generateProblem() {
+            const n1 = [1, Math.floor(Math.random() * 3) + 1, Math.floor(Math.random() * 2) + 1];
+            const n2 = [Math.floor(Math.random() * 2) + 1, 1, -1];
+            const d = [n1[1]*n2[2] - n1[2]*n2[1], n1[2]*n2[0] - n1[0]*n2[2], n1[0]*n2[1] - n1[1]*n2[0]];
+            const a = [Math.floor(Math.random() * 3), Math.floor(Math.random() * 3), 0];
+            const c1 = n1[0]*a[0] + n1[1]*a[1];
+            const c2 = n2[0]*a[0] + n2[1]*a[1];
+            problem = { n1, n2, d, a, c1, c2 };
+        }
+
+        function startApp() {
+            generateProblem();
+            document.getElementById('page-0').classList.add('hidden');
+            document.getElementById('interactive-container').classList.remove('hidden');
+            
+            const p1 = `\\mathit{p}_1: \\mathbf{\\mathit{r}} \\cdot \\begin{pmatrix} ${problem.n1[0]} \\\\ ${problem.n1[1]} \\\\ ${problem.n1[2]} \\end{pmatrix} = ${problem.c1}`;
+            const p2 = `\\mathit{p}_2: ${problem.n2[0]}x + ${problem.n2[1]}y ${problem.n2[2] < 0 ? '-' : '+'} ${Math.abs(problem.n2[2])}z = ${problem.c2}`;
+            
+            document.getElementById('problem-text').innerHTML = `\\[ ${p1} \\]\\[ ${p2} \\]`;
+            initDraggables();
+            MathJax.typeset();
+            updateProgress(10);
+        }
+
+        function initDraggables() {
+            const tray = document.getElementById('draggable-tray');
+            const choices = [problem.n1.join(','), problem.n2.join(','), "1,1,1", "0,1,2", "2,-1,0"].sort(() => Math.random() - 0.5);
+            choices.forEach(vecStr => {
+                const btn = document.createElement('div');
+                btn.className = "draggable-btn bg-white border-2 border-indigo-200 px-4 py-2 rounded-xl shadow-sm font-mono text-sm";
+                btn.draggable = true;
+                btn.innerText = `(${vecStr.replace(/,/g, ', ')})`;
+                btn.dataset.vec = vecStr;
+                btn.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', vecStr));
+                tray.appendChild(btn);
+            });
+
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('active'); });
+                zone.addEventListener('dragleave', () => zone.classList.remove('active'));
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('active');
+                    const val = e.dataTransfer.getData('text/plain');
+                    zone.innerHTML = `<div class="bg-indigo-500 text-white px-2 py-1 rounded text-xs font-bold">\\(\\begin{pmatrix} ${val.split(',').join('\\\\')} \\end{pmatrix}\\)</div>`;
+                    zone.dataset.current = val;
+                    MathJax.typesetPromise([zone]);
+                    validateStep1();
+                });
+            });
+        }
+
+        function validateStep1() {
+            const z1 = document.getElementById('drop-n1').dataset.current;
+            const z2 = document.getElementById('drop-n2').dataset.current;
+            if (z1 && z2) {
+                const correct = [problem.n1.join(','), problem.n2.join(',')];
+                if (correct.includes(z1) && correct.includes(z2) && z1 !== z2) {
+                    document.getElementById('feedback-1').innerHTML = '<span class="text-green-600">● Correct!</span>';
+                    unlockStep(2); updateProgress(35);
+                } else {
+                    document.getElementById('feedback-1').innerHTML = '<span class="text-red-500">● Incorrect Normals.</span>';
+                }
+            }
+        }
+
+        function validateStep2() {
+            const input = [parseMath(document.getElementById('d-x').value), parseMath(document.getElementById('d-y').value), parseMath(document.getElementById('d-z').value)];
+            if (input.every((v, i) => v === problem.d[i]) || input.every((v, i) => v === -problem.d[i])) {
+                if (input[0] === -problem.d[0]) problem.d = input;
+                document.getElementById('feedback-2').innerHTML = '<span class="text-green-600">● Correct Direction!</span>';
+                unlockStep(3); updateProgress(65);
+            } else {
+                document.getElementById('feedback-2').innerHTML = '<span class="text-red-500">● Calculation error.</span>';
+            }
+        }
+
+        function validateStep3() {
+            const ax = parseMath(document.getElementById('a-x').value);
+            const ay = parseMath(document.getElementById('a-y').value);
+            if (problem.n1[0]*ax + problem.n1[1]*ay === problem.c1 && problem.n2[0]*ax + problem.n2[1]*ay === problem.c2) {
+                document.getElementById('feedback-3').innerHTML = '<span class="text-green-600">● Correct Point!</span>';
+                problem.a = [ax, ay, 0]; showFinal(); updateProgress(100);
+            } else {
+                document.getElementById('feedback-3').innerHTML = '<span class="text-red-500">● Point is incorrect.</span>';
+            }
+        }
+
+        function unlockStep(num) {
+            const el = document.getElementById(`step-${num}-ui`);
+            el.classList.remove('opacity-30', 'pointer-events-none');
+        }
+
+        function updateProgress(val) {
+            document.getElementById('progress-bar').style.width = val + '%';
+        }
+
+        function showFinal() {
+            document.getElementById('step-4-ui').classList.remove('opacity-30', 'pointer-events-none');
+            document.getElementById('final-a-display').innerHTML = `\\begin{pmatrix} ${problem.a[0]} \\\\ ${problem.a[1]} \\\\ 0 \\end{pmatrix}`;
+            document.getElementById('final-d-display').innerHTML = `\\begin{pmatrix} ${problem.d[0]} \\\\ ${problem.d[1]} \\\\ ${problem.d[2]} \\end{pmatrix}`;
+            MathJax.typesetPromise();
+        }
+    </script>
+</body>
+</html>
