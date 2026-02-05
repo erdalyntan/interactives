@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H2 Math: Foot of Perpendicular</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body { background: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%); min-height: 100vh; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .glass-card { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(12px); border-radius: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4); }
+        
+        /* Bold Black Vector Arrow Styling */
+        .bold-vector {
+            position: relative;
+            display: inline-block;
+            font-family: 'Times New Roman', serif;
+            font-weight: 700;
+            font-style: italic;
+            color: #1e1b4b;
+        }
+        .bold-vector::before {
+            content: "→";
+            position: absolute;
+            top: -0.65em;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.75em;
+            font-weight: 900;
+            color: black;
+            font-style: normal;
+        }
+
+        /* H2 Column Vector Brackets */
+        .bracket-container { display: flex; align-items: center; font-family: 'Times New Roman', serif; color: #4338ca; }
+        .bracket { font-size: 5.5rem; font-weight: 100; line-height: 1; user-select: none; }
+
+        /* Draggable Blocks Styling */
+        .drag-item { 
+            cursor: grab; padding: 10px 18px; border-radius: 12px; background: white; 
+            border: 2px solid #ec4899; color: #be185d; font-weight: 800; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: all 0.2s; display: inline-block; 
+        }
+        .drag-item:active { cursor: grabbing; transform: scale(0.92); }
+        
+        /* Drop Zones */
+        .drop-zone { 
+            min-width: 90px; min-height: 80px; border: 3px dashed #cbd5e1; border-radius: 1.2rem; 
+            display: flex; align-items: center; justify-content: center; 
+            background: #f8fafc; transition: all 0.3s; padding: 6px; 
+        }
+        .drop-zone.over { background: #fdf2f8; border-color: #ec4899; transform: scale(1.05); }
+
+        .step-container { display: none; }
+        .step-container.active { display: block; animation: fadeInUp 0.5s ease-out; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        input { transition: all 0.2s; border: 2px solid #e2e8f0; border-radius: 0.75rem; text-align: center; font-weight: bold; color: #1e1b4b; }
+        input:focus { outline: none; border-color: #ec4899; box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.1); }
+
+        .instruction-tag { background: #fdf2f8; color: #db2777; padding: 4px 12px; border-radius: 9999px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; display: inline-block; }
+        
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .status-pending { background-color: #cbd5e1; }
+        .status-correct { background-color: #22c55e; box-shadow: 0 0 8px #22c55e; }
+        .status-error { background-color: #ef4444; }
+    </style>
+</head>
+<body class="p-4 md:p-10 flex justify-center items-start">
+
+    <div class="max-w-4xl w-full glass-card overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-8 text-center text-white shadow-lg">
+            <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight">Finding the Foot of Perpendicular from a Point to a Line</h1>
+        </div>
+
+        <div class="p-6 md:p-10">
+            <!-- PAGE 0: SUMMARY -->
+            <div id="page-summary" class="step-container active">
+                <h2 class="text-2xl font-black text-indigo-900 mb-6 flex items-center gap-3"><span class="bg-indigo-100 p-2 rounded-lg">📋</span> General Method</h2>
+                <p class="mb-6 text-slate-700 italic font-medium text-lg">
+                    Let <span class="bold-vector text-xl">OF</span> be the position vector of the foot of perpendicular from a point \(P\) to a line \(\mathit{l}\).
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <div class="p-5 bg-indigo-50 rounded-2xl border-l-8 border-indigo-500 shadow-sm">
+                        <p class="font-bold text-indigo-800 uppercase text-xs">Step 1</p>
+                        <p class="font-black text-slate-800">Vector Equation of Line</p>
+                        <p class="text-sm text-slate-600">State <span class="bold-vector">OF</span> \( = \mathbf{a} + \lambda \mathbf{d}\) for some \(\lambda \in \mathbb{R}\).</p>
+                    </div>
+                    <div class="p-5 bg-purple-50 rounded-2xl border-l-8 border-purple-500 shadow-sm">
+                        <p class="font-bold text-purple-800 uppercase text-xs">Step 2</p>
+                        <p class="font-black text-slate-800">Express <span class="bold-vector">PF</span></p>
+                        <p class="text-sm text-slate-600">Find displacement: <span class="bold-vector">PF</span> \( = \) <span class="bold-vector">OF</span> \( - \) <span class="bold-vector">OP</span>.</p>
+                    </div>
+                    <div class="p-5 bg-pink-50 rounded-2xl border-l-8 border-pink-500 shadow-sm">
+                        <p class="font-bold text-pink-800 uppercase text-xs">Step 3</p>
+                        <p class="font-black text-slate-800">Perpendicular Condition</p>
+                        <p class="text-sm text-slate-600">Since <span class="bold-vector">PF</span> \( \perp \mathit{l}\), set the dot product to zero: <span class="bold-vector">PF</span> \( \cdot \mathbf{d} = 0\).</p>
+                    </div>
+                    <div class="p-5 bg-amber-50 rounded-2xl border-l-8 border-amber-500 shadow-sm">
+                        <p class="font-bold text-amber-800 uppercase text-xs">Step 4</p>
+                        <p class="font-black text-slate-800">Calculate Foot <span class="bold-vector">OF</span></p>
+                        <p class="text-sm text-slate-600">Solve for \(\lambda\) and substitute back to find final coordinates.</p>
+                    </div>
+                </div>
+                <button onclick="startPractice()" class="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xl hover:bg-indigo-700 active:scale-95 shadow-xl">START INTERACTIVE PRACTICE 🚀</button>
+            </div>
+
+            <!-- INTERACTIVE CONTENT -->
+            <div id="interactive-content" class="hidden">
+                <div id="problem-statement" class="mb-8 p-6 bg-slate-50 border-2 border-indigo-100 rounded-3xl text-xl font-bold italic text-slate-800 shadow-inner"></div>
+
+                <!-- STEP 1 -->
+                <div id="step-1" class="step-container">
+                    <h3 class="font-black text-xl text-indigo-700 mb-6 italic underline underline-offset-4">Step 1: Position vector of Point \(F\)</h3>
+                    <div class="bg-white p-6 rounded-3xl border shadow-sm flex flex-col items-center gap-4">
+                        <span class="instruction-tag">Fill in the Vector Equation components</span>
+                        <div class="flex items-center text-2xl font-black flex-wrap justify-center gap-2">
+                            <span class="bold-vector text-3xl">OF</span> <span class="text-3xl mx-2">=</span>
+                            <div class="bracket-container scale-90 md:scale-100">
+                                <span class="bracket">(</span><div class="flex flex-col gap-2 -mx-1"><input id="s1-ax" type="text" class="w-14 h-12" placeholder="a1"><input id="s1-ay" type="text" class="w-14 h-12" placeholder="a2"><input id="s1-az" type="text" class="w-14 h-12" placeholder="a3"></div><span class="bracket">)</span>
+                            </div>
+                            <span class="text-3xl mx-2">\( + \lambda \)</span>
+                            <div class="bracket-container scale-90 md:scale-100">
+                                <span class="bracket">(</span><div class="flex flex-col gap-2 -mx-1"><input id="s1-dx" type="text" class="w-14 h-12" placeholder="d1"><input id="s1-dy" type="text" class="w-14 h-12" placeholder="d2"><input id="s1-dz" type="text" class="w-14 h-12" placeholder="d3"></div><span class="bracket">)</span>
+                            </div>
+                            <span class="text-3xl mx-4">for</span>
+                            <input id="s1-kw" type="text" class="w-28 border-b-4 border-indigo-200 bg-transparent text-center px-2 py-1" placeholder="?">
+                            <span class="text-3xl ml-4 font-serif">\( \lambda \in \mathbb{R} \)</span>
+                        </div>
+                    </div>
+                    <div id="fb-1" class="mt-4 text-center font-black min-h-[1.5rem]"></div>
+                    <button onclick="checkStep1()" class="mt-6 w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold">Validate Step 1</button>
+                </div>
+
+                <!-- STEP 2 -->
+                <div id="step-2" class="step-container">
+                    <h3 class="font-black text-xl text-purple-700 mb-6 italic">Step 2: Vector Displacement <span class="bold-vector">PF</span></h3>
+                    <div class="flex flex-col items-center gap-8 py-4">
+                        <span class="instruction-tag">Drag the correct notations to build the formula</span>
+                        <div class="flex items-center gap-6 text-4xl font-black">
+                            <span class="bold-vector">PF</span> = 
+                            <div id="dz-1" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)">?</div>
+                            <span class="text-pink-500">\( - \)</span>
+                            <div id="dz-2" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)">?</div>
+                        </div>
+                        <div id="drag-container-2" class="flex gap-4 flex-wrap justify-center"></div>
+                    </div>
+                    <div id="fb-2" class="mt-6 text-center font-black min-h-[1.5rem]"></div>
+                    <button onclick="checkStep2()" class="mt-4 w-full py-4 bg-purple-600 text-white rounded-2xl font-bold">Validate Step 2</button>
+                </div>
+
+                <!-- STEP 3 -->
+                <div id="step-3" class="step-container">
+                    <h3 class="font-black text-xl text-pink-700 mb-6 italic">Step 3: Perpendicular Condition</h3>
+                    <div class="bg-white p-8 rounded-3xl border space-y-12 shadow-sm">
+                        
+                        <!-- Symbolic Part -->
+                        <div class="relative">
+                            <span class="status-dot status-pending" id="status-3a"></span>
+                            <span class="instruction-tag">Part A: Drag symbolic notations</span>
+                            <div class="flex items-center gap-4 text-3xl font-black justify-center mt-2">
+                                <div id="dz-sym1" class="drop-zone !min-w-[100px]" ondrop="drop(event)" ondragover="allowDrop(event)">?</div>
+                                <span class="text-slate-300">\( \cdot \)</span>
+                                <div id="dz-sym2" class="drop-zone !min-w-[100px]" ondrop="drop(event)" ondragover="allowDrop(event)">?</div>
+                                <span>\( = 0 \)</span>
+                            </div>
+                            <div id="drag-container-3a" class="flex gap-3 mt-4 flex-wrap justify-center"></div>
+                        </div>
+
+                        <!-- Expansion Part (No repeated vectors in tray) -->
+                        <div class="pt-8 border-t border-slate-100 relative">
+                            <span class="status-dot status-pending" id="status-3b"></span>
+                            <span class="instruction-tag">Part B: Drag column vectors (Vectors can be reused)</span>
+                            <div class="flex items-center text-xl font-bold gap-3 flex-wrap justify-center mt-2">
+                                <span>[ (</span><div id="dz-3" class="drop-zone scale-75" ondrop="drop(event)" ondragover="allowDrop(event)">?</div>
+                                <span>\( + \lambda \)</span><div id="dz-4" class="drop-zone scale-75" ondrop="drop(event)" ondragover="allowDrop(event)">?</div>
+                                <span>) \( - \)</span><div id="dz-5" class="drop-zone scale-75" ondrop="drop(event)" ondragover="allowDrop(event)">?</div>
+                                <span>] \( \cdot \)</span><div id="dz-6" class="drop-zone scale-75" ondrop="drop(event)" ondragover="allowDrop(event)">?</div>
+                                <span>= 0</span>
+                            </div>
+                            <div id="drag-container-3b" class="flex gap-3 mt-4 flex-wrap justify-center"></div>
+                        </div>
+
+                        <!-- Numerical Part -->
+                        <div class="pt-8 border-t border-slate-100 relative">
+                            <span class="status-dot status-pending" id="status-3c"></span>
+                            <span class="instruction-tag">Part C: Solve for numerical coefficients</span>
+                            <div class="flex items-center gap-3 text-3xl font-black italic justify-center mt-2">
+                                <input id="s3-coeff" type="text" class="w-20 h-14" placeholder="coeff">
+                                <span class="text-pink-600">\( \lambda + \)</span>
+                                <input id="s3-const" type="text" class="w-28 h-14" placeholder="const">
+                                <span>= 0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="fb-3" class="mt-6 text-center font-black min-h-[1.5rem]"></div>
+                    <button onclick="checkStep3()" class="mt-6 w-full py-4 bg-pink-600 text-white rounded-2xl font-bold shadow-lg">Check All Parts of Step 3</button>
+                </div>
+
+                <!-- STEP 4 -->
+                <div id="step-4" class="step-container">
+                    <h3 class="font-black text-2xl text-amber-600 mb-8 text-center uppercase tracking-widest italic">Step 4: Final Coordinates</h3>
+                    <div class="bg-amber-50 p-10 rounded-[3rem] border-4 border-amber-200 flex flex-col items-center gap-8 shadow-inner text-center">
+                        <div class="text-3xl font-bold bg-white px-6 py-4 rounded-2xl shadow-sm italic">
+                            \( \lambda = \) <span id="res-lambda-val" class="text-indigo-600 font-black"></span>
+                        </div>
+                        
+                        <div class="instruction-tag">Calculate final components (a + λd)</div>
+
+                        <div class="flex items-center justify-center flex-wrap gap-4">
+                            <div class="bold-vector text-4xl">OF</div>
+                            <div class="text-4xl font-black text-slate-800">=</div>
+                            <div class="bracket-container scale-125">
+                                <span class="bracket !text-indigo-700">(</span>
+                                <div class="flex flex-col gap-3 -mx-2">
+                                    <input id="final-x" type="text" class="w-24 h-14 font-bold text-xl" placeholder="x">
+                                    <input id="final-y" type="text" class="w-24 h-14 font-bold text-xl" placeholder="y">
+                                    <input id="final-z" type="text" class="w-24 h-14 font-bold text-xl" placeholder="z">
+                                </div>
+                                <span class="bracket !text-indigo-700">)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="fb-4" class="mt-6 text-center font-black min-h-[1.5rem]"></div>
+                    <button onclick="checkStep4()" class="mt-6 w-full py-5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-2xl font-black text-xl hover:scale-105">CHECK FINAL ANSWER 🏁</button>
+                    <button onclick="location.reload()" class="mt-4 w-full py-3 text-white font-bold underline opacity-80 hover:opacity-100">Try New Problem</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let p = {};
+        const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+        
+        function robustParse(str) {
+            if (!str) return NaN;
+            let clean = str.replace(/[()\s]/g, '');
+            if (clean.includes('/')) {
+                let parts = clean.split('/');
+                return parseFloat(parts[0]) / parseFloat(parts[1]);
+            }
+            return parseFloat(clean);
+        }
+
+        function generate() {
+            p.dx = Math.floor(Math.random() * 3) + 1; p.dy = Math.floor(Math.random() * 2) + 1; p.dz = Math.floor(Math.random() * 2);
+            p.lax = Math.floor(Math.random() * 4) + 1; p.lay = Math.floor(Math.random() * 4) + 1; p.laz = Math.floor(Math.random() * 3);
+            p.px = Math.floor(Math.random() * 6) + 1; p.py = Math.floor(Math.random() * 6) + 1; p.pz = Math.floor(Math.random() * 4);
+            p.magSq = (p.dx**2) + (p.dy**2) + (p.dz**2);
+            p.rel_ax = p.lax - p.px; p.rel_ay = p.lay - p.py; p.rel_az = p.laz - p.pz;
+            p.dot_rel = (p.rel_ax * p.dx) + (p.rel_ay * p.dy) + (p.rel_az * p.dz);
+            function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+            let num = -p.dot_rel, den = p.magSq, common = Math.abs(gcd(num, den));
+            p.lNum = num/common; p.lDen = den/common; p.lVal = num/den;
+            p.tx = p.lax + p.lVal * p.dx; p.ty = p.lay + p.lVal * p.dy; p.tz = p.laz + p.lVal * p.dz;
+
+            document.getElementById('problem-statement').innerHTML = `Given point \\( P(${p.px}, ${p.py}, ${p.pz}) \\) and line \\( \\mathit{l} \\):
+            \\[ \\mathbf{r} = \\begin{pmatrix} ${p.lax} \\\\ ${p.lay} \\\\ ${p.laz} \\end{pmatrix} + \\lambda \\begin{pmatrix} ${p.dx} \\\\ ${p.dy} \\\\ ${p.dz} \\end{pmatrix}, \\lambda \\in \\mathbb{R} \\]
+            Let \\( F \\) be the foot of the perpendicular from point \\( P \\) to line \\( \\mathit{l} \\). Find \\( \\vec{OF} \\).`;
+            
+            const c2 = document.getElementById('drag-container-2'); c2.innerHTML = '';
+            shuffle([{id:'drag-of', c:'<span class="bold-vector">OF</span>'}, {id:'drag-op', c:'<span class="bold-vector">OP</span>'}, {id:'drag-dummy', c:'<span class="bold-vector">FO</span>'}]).forEach(i => c2.innerHTML += `<div id="${i.id}" class="drag-item" draggable="true" ondragstart="drag(event)">${i.c}</div>`);
+
+            const c3a = document.getElementById('drag-container-3a'); c3a.innerHTML = '';
+            shuffle([{id:'drag-pf-sym', c:'<span class="bold-vector">PF</span>'}, {id:'drag-d-sym', c:'\\( \\mathbf{d} \\)'}, {id:'drag-op-sym', c:'<span class="bold-vector">OP</span>'}]).forEach(i => c3a.innerHTML += `<div id="${i.id}" class="drag-item !py-2 !text-base" draggable="true" ondragstart="drag(event)">${i.c}</div>`);
+
+            // NO REPEATED VECTORS IN TRAY
+            const c3b = document.getElementById('drag-container-3b'); c3b.innerHTML = '';
+            shuffle([
+                {id:'dz3-a', c:`\\( \\begin{pmatrix} ${p.lax} \\\\ ${p.lay} \\\\ ${p.laz} \\end{pmatrix} \\)`},
+                {id:'dz3-d', c:`\\( \\begin{pmatrix} ${p.dx} \\\\ ${p.dy} \\\\ ${p.dz} \\end{pmatrix} \\)`},
+                {id:'dz3-p', c:`\\( \\begin{pmatrix} ${p.px} \\\\ ${p.py} \\\\ ${p.pz} \\end{pmatrix} \\)`}
+            ]).forEach(i => c3b.innerHTML += `<div id="${i.id}" class="drag-item !text-xs" draggable="true" ondragstart="drag(event)">${i.c}</div>`);
+            
+            MathJax.typesetPromise();
+        }
+
+        function startPractice() { generate(); document.getElementById('page-summary').classList.remove('active'); document.getElementById('interactive-content').classList.remove('hidden'); document.getElementById('step-1').classList.add('active'); }
+        function allowDrop(e) { e.preventDefault(); e.target.closest('.drop-zone').classList.add('over'); }
+        function drag(e) { e.dataTransfer.setData("text", e.target.id); }
+        
+        // Modified drop logic: Cloning content allows the same tray item to be used multiple times
+        function drop(e) {
+            e.preventDefault();
+            let d = e.dataTransfer.getData("text");
+            let trayEl = document.getElementById(d);
+            let dz = e.target.closest('.drop-zone');
+            dz.classList.remove('over');
+            dz.innerHTML = trayEl.innerHTML;
+            dz.dataset.id = d;
+            MathJax.typesetPromise();
+        }
+
+        function checkStep1() {
+            if (document.getElementById('s1-ax').value == p.lax && document.getElementById('s1-ay').value == p.lay && document.getElementById('s1-az').value == p.laz && document.getElementById('s1-dx').value == p.dx && document.getElementById('s1-dy').value == p.dy && document.getElementById('s1-dz').value == p.dz && document.getElementById('s1-kw').value.toLowerCase().trim() === 'some') {
+                showFB('fb-1', '✨ Correct!', true); setTimeout(() => { document.getElementById('step-1').classList.remove('active'); document.getElementById('step-2').classList.add('active'); }, 800);
+            } else showFB('fb-1', '❌ Check components!', false);
+        }
+
+        function checkStep2() {
+            if (document.getElementById('dz-1').dataset.id === 'drag-of' && document.getElementById('dz-2').dataset.id === 'drag-op') {
+                showFB('fb-2', '✨ Bingo!', true); setTimeout(() => { document.getElementById('step-2').classList.remove('active'); document.getElementById('step-3').classList.add('active'); }, 800);
+            } else showFB('fb-2', '❌ Check your formula (Terminal minus Initial)!', false);
+        }
+
+        function checkStep3() {
+            const sym = (document.getElementById('dz-sym1').dataset.id === 'drag-pf-sym' && document.getElementById('dz-sym2').dataset.id === 'drag-d-sym');
+            const blocks = (document.getElementById('dz-3').dataset.id === 'dz3-a' && document.getElementById('dz-4').dataset.id === 'dz3-d' && document.getElementById('dz-5').dataset.id === 'dz3-p' && document.getElementById('dz-6').dataset.id === 'dz3-d');
+            const vC = robustParse(document.getElementById('s3-coeff').value), vK = robustParse(document.getElementById('s3-const').value);
+            const math = (Math.abs(vC - p.magSq) < 0.01 && Math.abs(vK - p.dot_rel) < 0.01);
+
+            document.getElementById('status-3a').className = `status-dot ${sym ? 'status-correct' : 'status-error'}`;
+            document.getElementById('status-3b').className = `status-dot ${blocks ? 'status-correct' : 'status-error'}`;
+            document.getElementById('status-3c').className = `status-dot ${math ? 'status-correct' : 'status-error'}`;
+
+            if (sym && blocks && math) {
+                showFB('fb-3', '✨ Mathematical Mastery! Heading to Step 4.', true);
+                setTimeout(() => {
+                    document.getElementById('step-3').classList.remove('active');
+                    document.getElementById('step-4').classList.add('active');
+                    document.getElementById('res-lambda-val').innerText = p.lDen === 1 ? p.lNum : `${p.lNum}/${p.lDen}`;
+                }, 1000);
+            } else {
+                let msg = "❌ Errors found. ";
+                if (!sym) msg += "Check symbolic notations. ";
+                if (!blocks) msg += "Check column vector order. ";
+                if (!math) msg += "Check numeric expansion.";
+                showFB('fb-3', msg, false);
+            }
+        }
+
+        function checkStep4() {
+            const ix = robustParse(document.getElementById('final-x').value), iy = robustParse(document.getElementById('final-y').value), iz = robustParse(document.getElementById('final-z').value);
+            if (Math.abs(ix - p.tx) < 0.01 && Math.abs(iy - p.ty) < 0.01 && Math.abs(iz - p.tz) < 0.01) showFB('fb-4', '🎉 CONGRATULATIONS! Mastery Achieved!', true);
+            else showFB('fb-4', '❌ Wrong components. Double check your calculation.', false);
+        }
+
+        function showFB(id, t, ok) { const e = document.getElementById(id); e.innerText = t; e.className = `mt-6 text-center font-black text-lg ${ok ? 'text-green-500' : 'text-rose-500'}`; }
+    </script>
+</body>
+</html>
