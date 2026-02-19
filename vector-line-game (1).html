@@ -535,22 +535,17 @@
             let l, m, n;
             const questionType = Math.random();
             
-            if (questionType < 0.50) {
-                // Type 1: All fractions (standard form) - 50%
+            if (questionType < 0.60) {
+                // Type 1: All fractions (standard form) - 60%
                 l = Math.floor(Math.random() * 8) + 1;
                 m = Math.floor(Math.random() * 8) + 1;
                 n = Math.floor(Math.random() * 8) + 1;
-            } else if (questionType < 0.90) {
+            } else {
                 // Type 2: One constant coordinate - 40%
                 const constantAxis = Math.floor(Math.random() * 3);
                 l = constantAxis === 0 ? 0 : Math.floor(Math.random() * 8) + 1;
                 m = constantAxis === 1 ? 0 : Math.floor(Math.random() * 8) + 1;
                 n = constantAxis === 2 ? 0 : Math.floor(Math.random() * 8) + 1;
-            } else {
-                // Type 3: All constants (point only) - 10%
-                l = 0;
-                m = 0;
-                n = 0;
             }
 
             currentQuestion = {
