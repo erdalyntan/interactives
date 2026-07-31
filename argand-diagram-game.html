@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Argand Diagram Challenge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --secondary: #ec4899;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg-dark: #0f172a;
+            --bg-light: #1e293b;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            animation: rotate 30s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            position: relative;
+            z-index: 1;
+            animation: slideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.2); }
+        }
+
+        .score-display {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+            animation: pulse 2s ease-in-out infinite;
+            white-space: nowrap;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .timer {
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .timer-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 500;
+            color: var(--accent);
+            min-width: 80px;
+        }
+
+        .timer-value.warning {
+            color: var(--danger);
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .question-box {
+            background: var(--bg-light);
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            border-left: 5px solid var(--accent);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .question-title {
+            color: var(--accent);
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .complex-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.2rem;
+            text-align: center;
+            padding: 20px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            letter-spacing: 2px;
+        }
+
+        .answer-section {
+            background: var(--bg-light);
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+
+        .answer-title {
+            color: var(--secondary);
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        .diagram-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        #argandSvg {
+            width: 100%;
+            max-width: 480px;
+            height: auto;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 16px;
+            border: 2px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .grid-point {
+            fill: rgba(99, 102, 241, 0.12);
+            stroke: rgba(99, 102, 241, 0.35);
+            stroke-width: 1;
+            cursor: pointer;
+            transition: fill 0.15s ease, stroke 0.15s ease;
+        }
+
+        .grid-point:hover {
+            fill: rgba(245, 158, 11, 0.6);
+            stroke: var(--accent);
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-check {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+
+        .btn-check:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-retry {
+            background: linear-gradient(135deg, var(--accent), #d97706);
+            color: white;
+        }
+
+        .btn-retry:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .feedback {
+            text-align: center;
+            padding: 18px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .feedback.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border: 2px solid var(--success);
+        }
+
+        .feedback.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            border: 2px solid var(--danger);
+        }
+
+        .hint {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            border-left: 3px solid var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.6rem;
+            }
+
+            .complex-number {
+                font-size: 1.6rem;
+            }
+
+            .score-display {
+                font-size: 1.2rem;
+                padding: 10px 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Argand Diagram Quest</h1>
+            <div class="score-display">🏆 <span id="score">0</span></div>
+        </div>
+
+        <div class="timer">
+            <span>⏱️ Time:</span>
+            <span class="timer-value" id="timer">00:00</span>
+        </div>
+
+        <div class="question-box">
+            <div class="question-title">🎯 Plot the Complex Number</div>
+            <div class="complex-number" id="complexNumber"></div>
+        </div>
+
+        <div class="answer-section">
+            <div class="answer-title">✍️ Click on the Argand Diagram</div>
+
+            <div class="diagram-wrapper">
+                <svg id="argandSvg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"></svg>
+            </div>
+
+            <div id="feedback"></div>
+
+            <div class="buttons">
+                <button class="btn-check" id="checkBtn" onclick="checkAnswer()">Check Answer</button>
+                <button class="btn-retry" id="retryBtn" onclick="retryQuestion()" style="display: none;">Try Again</button>
+                <button class="btn-next" id="nextBtn" onclick="nextQuestion()" style="display: none;">Next Question</button>
+            </div>
+
+            <div class="hint">
+                💡 <strong>Tip:</strong> On an Argand diagram, the real part (x) is plotted on the horizontal Re-axis, and the imaginary part (y) is plotted on the vertical Im-axis. A complex number x + iy is plotted at the point (x, y).
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        let currentQuestion = {};
+        let selected = null;
+        let startTime;
+        let timerInterval;
+        let attempts = 0;
+
+        const RANGE = 5;   // points go from -5 to 5
+        const UNIT = 35;
+        const CX = 250;
+        const CY = 250;
+
+        function formatComplex(a, b) {
+            let parts = [];
+
+            if (a !== 0) {
+                parts.push(`${a}`);
+            }
+
+            if (b !== 0) {
+                const absB = Math.abs(b);
+                const bStr = absB === 1 ? 'i' : `${absB}i`;
+
+                if (parts.length === 0) {
+                    parts.push((b < 0 ? '-' : '') + bStr);
+                } else {
+                    parts.push((b < 0 ? '- ' : '+ ') + bStr);
+                }
+            }
+
+            if (parts.length === 0) return '0';
+            return parts.join(' ');
+        }
+
+        function randNonZero(min, max) {
+            let v;
+            do {
+                v = Math.floor(Math.random() * (max - min + 1)) + min;
+            } while (v === 0);
+            return v;
+        }
+
+        function buildGrid() {
+            const svg = document.getElementById('argandSvg');
+            const gridRange = RANGE + 1; // draw grid slightly larger than clickable range
+            let html = '';
+
+            // Grid lines
+            for (let i = -gridRange; i <= gridRange; i++) {
+                html += `<line x1="${CX + i * UNIT}" y1="${CY - gridRange * UNIT}" x2="${CX + i * UNIT}" y2="${CY + gridRange * UNIT}" stroke="rgba(148,163,184,0.15)" stroke-width="1"/>`;
+                html += `<line x1="${CX - gridRange * UNIT}" y1="${CY + i * UNIT}" x2="${CX + gridRange * UNIT}" y2="${CY + i * UNIT}" stroke="rgba(148,163,184,0.15)" stroke-width="1"/>`;
+            }
+
+            // Axes
+            html += `<line x1="${CX - gridRange * UNIT}" y1="${CY}" x2="${CX + gridRange * UNIT}" y2="${CY}" stroke="#f1f5f9" stroke-width="2"/>`;
+            html += `<line x1="${CX}" y1="${CY - gridRange * UNIT}" x2="${CX}" y2="${CY + gridRange * UNIT}" stroke="#f1f5f9" stroke-width="2"/>`;
+
+            // Arrow heads
+            html += `<polygon points="${CX + gridRange * UNIT},${CY - 6} ${CX + gridRange * UNIT},${CY + 6} ${CX + gridRange * UNIT + 12},${CY}" fill="#f1f5f9"/>`;
+            html += `<polygon points="${CX - 6},${CY - gridRange * UNIT} ${CX + 6},${CY - gridRange * UNIT} ${CX},${CY - gridRange * UNIT - 12}" fill="#f1f5f9"/>`;
+
+            // Axis labels
+            html += `<text x="${CX + gridRange * UNIT + 16}" y="${CY + 20}" fill="#f59e0b" font-size="18" font-weight="700" font-family="Outfit, sans-serif">Re</text>`;
+            html += `<text x="${CX - 30}" y="${CY - gridRange * UNIT - 12}" fill="#f59e0b" font-size="18" font-weight="700" font-family="Outfit, sans-serif">Im</text>`;
+
+            // Tick labels
+            for (let i = -RANGE; i <= RANGE; i++) {
+                if (i === 0) continue;
+                html += `<text x="${CX + i * UNIT}" y="${CY + 18}" fill="#94a3b8" font-size="11" text-anchor="middle" font-family="JetBrains Mono, monospace">${i}</text>`;
+                html += `<text x="${CX - 16}" y="${CY - i * UNIT + 4}" fill="#94a3b8" font-size="11" text-anchor="middle" font-family="JetBrains Mono, monospace">${i}</text>`;
+            }
+
+            // Origin label
+            html += `<text x="${CX - 16}" y="${CY + 18}" fill="#94a3b8" font-size="11" text-anchor="middle" font-family="JetBrains Mono, monospace">0</text>`;
+
+            // Clickable grid points
+            for (let re = -RANGE; re <= RANGE; re++) {
+                for (let im = -RANGE; im <= RANGE; im++) {
+                    const x = CX + re * UNIT;
+                    const y = CY - im * UNIT;
+                    html += `<circle class="grid-point" cx="${x}" cy="${y}" r="10" onclick="selectPoint(${re},${im})"/>`;
+                }
+            }
+
+            // Correct answer marker (hidden by default)
+            html += `<circle id="correctMarker" cx="0" cy="0" r="9" fill="none" stroke="#10b981" stroke-width="3" stroke-dasharray="4,3" style="display:none; pointer-events:none;"/>`;
+
+            // Selected marker (hidden by default)
+            html += `<circle id="selectedMarker" cx="0" cy="0" r="8" fill="#ec4899" style="display:none; pointer-events:none;"/>`;
+            html += `<text id="selectedLabel" x="0" y="0" fill="#fff" font-size="13" font-weight="700" font-family="JetBrains Mono, monospace" style="display:none; pointer-events:none;"></text>`;
+
+            svg.innerHTML = html;
+        }
+
+        function selectPoint(re, im) {
+            selected = { re, im };
+            const x = CX + re * UNIT;
+            const y = CY - im * UNIT;
+
+            const marker = document.getElementById('selectedMarker');
+            marker.setAttribute('cx', x);
+            marker.setAttribute('cy', y);
+            marker.setAttribute('fill', '#ec4899');
+            marker.style.display = 'block';
+
+            const label = document.getElementById('selectedLabel');
+            label.setAttribute('x', x + 14);
+            label.setAttribute('y', y - 10);
+            label.textContent = `(${re}, ${im})`;
+            label.style.display = 'block';
+
+            document.getElementById('correctMarker').style.display = 'none';
+        }
+
+        function generateQuestion() {
+            let re, im;
+            const questionType = Math.random();
+
+            if (questionType < 0.6) {
+                // Both real and imaginary parts non-zero
+                re = randNonZero(-RANGE, RANGE);
+                im = randNonZero(-RANGE, RANGE);
+            } else if (Math.random() < 0.5) {
+                // Purely imaginary
+                re = 0;
+                im = randNonZero(-RANGE, RANGE);
+            } else {
+                // Purely real
+                re = randNonZero(-RANGE, RANGE);
+                im = 0;
+            }
+
+            currentQuestion = { re, im };
+            document.getElementById('complexNumber').textContent = `z = ${formatComplex(re, im)}`;
+
+            // Reset markers and state
+            selected = null;
+            document.getElementById('selectedMarker').style.display = 'none';
+            document.getElementById('selectedLabel').style.display = 'none';
+            document.getElementById('correctMarker').style.display = 'none';
+
+            document.getElementById('feedback').innerHTML = '';
+            document.getElementById('checkBtn').style.display = 'inline-block';
+            document.getElementById('retryBtn').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+
+            attempts = 0;
+            startTime = Date.now();
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                const timerElement = document.getElementById('timer');
+                timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+                if (elapsed >= 60) {
+                    timerElement.classList.add('warning');
+                } else {
+                    timerElement.classList.remove('warning');
+                }
+            }, 1000);
+        }
+
+        function checkAnswer() {
+            if (!selected) {
+                showFeedback('📍 Please click a point on the diagram first!', 'error');
+                return;
+            }
+
+            attempts++;
+            const correct = selected.re === currentQuestion.re && selected.im === currentQuestion.im;
+            const marker = document.getElementById('selectedMarker');
+
+            if (correct) {
+                clearInterval(timerInterval);
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const points = elapsed < 60 ? 2 : 1;
+                score += points;
+                document.getElementById('score').textContent = score;
+
+                marker.setAttribute('fill', '#10b981');
+
+                const timeBonus = elapsed < 60 ? ' 🔥 Speed bonus!' : '';
+                showFeedback(`🎉 Correct! +${points} point${points > 1 ? 's' : ''}${timeBonus}`, 'success');
+                document.getElementById('checkBtn').style.display = 'none';
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            } else {
+                marker.setAttribute('fill', '#ef4444');
+
+                // Show correct location
+                const cx2 = CX + currentQuestion.re * UNIT;
+                const cy2 = CY - currentQuestion.im * UNIT;
+                const cm = document.getElementById('correctMarker');
+                cm.setAttribute('cx', cx2);
+                cm.setAttribute('cy', cy2);
+                cm.style.display = 'block';
+
+                showFeedback('❌ Not quite! The dashed green circle shows the correct point.', 'error');
+                document.getElementById('checkBtn').style.display = 'none';
+                document.getElementById('retryBtn').style.display = 'inline-block';
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            }
+        }
+
+        function retryQuestion() {
+            selected = null;
+            document.getElementById('selectedMarker').style.display = 'none';
+            document.getElementById('selectedLabel').style.display = 'none';
+            document.getElementById('correctMarker').style.display = 'none';
+            document.getElementById('feedback').innerHTML = '';
+            document.getElementById('checkBtn').style.display = 'inline-block';
+            document.getElementById('retryBtn').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+        }
+
+        function nextQuestion() {
+            generateQuestion();
+        }
+
+        function showFeedback(message, type) {
+            const feedback = document.getElementById('feedback');
+            feedback.className = `feedback ${type}`;
+            feedback.innerHTML = message;
+        }
+
+        // Initialize
+        buildGrid();
+        generateQuestion();
+    </script>
+</body>
+</html>
